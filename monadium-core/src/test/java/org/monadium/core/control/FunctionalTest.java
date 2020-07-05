@@ -19,6 +19,6 @@ public class FunctionalTest {
 		assertTimeout(Duration.ofSeconds(1), () -> fix(self -> { self.apply(0); return self; }));
 		assertEquals(IntStream.rangeClosed(0, 16).sum(), Functional.<Integer, Integer> fix(self -> x ->
 			x >= 0 ? x + self.apply(x - 1) : 0
-																						  ).apply(16));
+		).apply(16));
 	}
 }
