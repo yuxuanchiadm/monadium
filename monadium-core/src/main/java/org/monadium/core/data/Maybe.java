@@ -97,8 +97,8 @@ public abstract class Maybe<A> implements Iterable<A> {
 	public static <A> Maybe<A> pure(A a) { return just(a); }
 	public static <A> Maybe<A> empty() { return nothing(); }
 	public static <A> Maybe<Maybe<A>> optional(Maybe<A> fa) { return fa.map(Maybe::just).plus(pure(nothing())); }
-	public static <A, B> List<B> replace(List<A> fa, B b) { return fa.map(a -> b); }
-	public static <A> List<Unit> discard(List<A> fa) { return fa.map(a -> unit()); }
+	public static <A, B> Maybe<B> replace(Maybe<A> fa, B b) { return fa.map(a -> b); }
+	public static <A> Maybe<Unit> discard(Maybe<A> fa) { return fa.map(a -> unit()); }
 
 	static final class MaybeIterator<A> implements Iterator<A> {
 		Maybe<A> current;
