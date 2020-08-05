@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.monadium</groupId>
 	<artifactId>monadium-parent</artifactId>
-	<version>1.2.0</version>
+	<version>1.3.0</version>
 	<packaging>pom</packaging>
 	<name>Monadium</name>
 	<description>Monadic functional library for Java</description>
