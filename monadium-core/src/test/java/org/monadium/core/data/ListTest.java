@@ -2,6 +2,8 @@ package org.monadium.core.data;
 
 import org.monadium.core.data.List;
 import static org.monadium.core.data.List.*;
+import org.monadium.core.data.Maybe;
+import static org.monadium.core.data.Maybe.*;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,5 +28,10 @@ public class ListTest {
 		assertEquals(nil(), list(new Integer[] { 0, 1, 2 }, 2, 2));
 		assertEquals(cons(2, nil()), list(new Integer[] { 0, 1, 2 }, 2, 3));
 		assertEquals(nil(), list(new Integer[] { 0, 1, 2 }, 3, 3));
+	}
+	@Test public void testOptional() {
+		assertEquals(list(nothing()), optional(list()));
+		assertEquals(list(just(1), nothing()), optional(list(1)));
+		assertEquals(list(just(1), just(2), nothing()), optional(list(1, 2)));
 	}
 }
