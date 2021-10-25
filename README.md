@@ -1,4 +1,4 @@
-# Monadium [![Build Status](https://travis-ci.com/yuxuanchiadm/monadium.svg?branch=master)](https://travis-ci.com/yuxuanchiadm/monadium)
+# Monadium ![GitHub Repo stars](https://img.shields.io/github/stars/yuxuanchiadm/monadium?style=flat-square) ![GitHub](https://img.shields.io/github/license/yuxuanchiadm/monadium?style=flat-square) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yuxuanchiadm/monadium/Java%20CI%20with%20Maven?style=flat-square) ![GitHub all releases](https://img.shields.io/github/downloads/yuxuanchiadm/monadium/total?style=flat-square)
 
 Monadic functional library for Java.
 
