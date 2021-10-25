@@ -8,14 +8,6 @@
 	<packaging>pom</packaging>
 	<name>Monadium</name>
 	<description>Monadic functional library for Java</description>
- 
-	<distributionManagement>
-		<repository>
-			<id>monadium-maven</id>
-			<name>monadium-maven</name>
-			<url>https://api.bintray.com/maven/yuxuanchiadm/monadium-maven/monadium/;publish=1</url>
-		</repository>
-	</distributionManagement>
 
 	<developers>
 		<developer>
