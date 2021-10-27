@@ -1,5 +1,10 @@
 package org.monadium.core.control;
 
+import java.time.Duration;
+
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.monadium.core.control.Trampoline;
 import static org.monadium.core.control.Trampoline.*;
 import org.monadium.core.data.Bottom;
@@ -7,11 +12,6 @@ import static org.monadium.core.data.Bottom.*;
 
 import static org.monadium.core.Notation.*;
 import static org.monadium.core.control.Trampoline.Notation.*;
-
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import java.time.Duration;
 
 public class TrampolineTest {
 	@Test public void testBasic() {

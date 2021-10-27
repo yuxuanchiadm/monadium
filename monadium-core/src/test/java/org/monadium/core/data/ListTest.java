@@ -1,12 +1,12 @@
 package org.monadium.core.data;
 
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.monadium.core.data.List;
 import static org.monadium.core.data.List.*;
 import org.monadium.core.data.Maybe;
 import static org.monadium.core.data.Maybe.*;
-
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ListTest {
 	@Test public void testBasic() {

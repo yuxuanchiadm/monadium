@@ -1,13 +1,13 @@
 package org.monadium.core.control;
 
-import org.monadium.core.control.Functional;
-import static org.monadium.core.control.Functional.*;
+import java.time.Duration;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.time.Duration;
-import java.util.stream.IntStream;
+import org.monadium.core.control.Functional;
+import static org.monadium.core.control.Functional.*;
 
 public class FunctionalTest {
 	@Test public void testBasic() {

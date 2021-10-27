@@ -1,15 +1,13 @@
 package org.monadium.core.control;
 
+import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import org.monadium.core.control.Cont;
 import static org.monadium.core.control.Cont.*;
-import org.monadium.core.data.Bottom;
-import static org.monadium.core.data.Bottom.*;
 
 import static org.monadium.core.Notation.*;
 import static org.monadium.core.control.Cont.Notation.*;
-
-import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ContTest {
 	@Test public void testBasic() {
