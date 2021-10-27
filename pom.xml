@@ -9,6 +9,14 @@
 	<name>Monadium</name>
 	<description>Monadic functional library for Java</description>
 
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>Github</name>
+			<url>https://maven.pkg.github.com/yuxuanchiadm/monadium</url>
+		</repository>
+	</distributionManagement>
+
 	<developers>
 		<developer>
 			<id>yuxuanchiadm</id>
