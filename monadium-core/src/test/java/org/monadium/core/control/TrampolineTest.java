@@ -26,7 +26,7 @@ public class TrampolineTest {
 			}
 		}.two().run());
 	}
-	@Test public void testRecurrsion() {
+	@Test public void testRecursion() {
 		assertEquals(832040, new Object() {
 			Trampoline<Integer> fib(int i) {
 				return i <= 1 ? done(i) : $do(
@@ -45,12 +45,12 @@ public class TrampolineTest {
 			}
 		}.sum(65535).run());
 		assertTimeout(Duration.ofSeconds(1), () -> new Object() {
-			Trampoline<Integer> fibtail(int i, int a, int b) {
+			Trampoline<Integer> fibTail(int i, int a, int b) {
 				return i <= 0 ? done(a)
 					: i <= 1 ? done(b)
-					: more(() -> fibtail(i - 1, b, a + b));
+					: more(() -> fibTail(i - 1, b, a + b));
 			}
-		}.fibtail(65535, 0, 1).run());
+		}.fibTail(65535, 0, 1).run());
 	}
 	@Test public void testInterrupt() {
 		Thread.currentThread().interrupt();

@@ -8,11 +8,7 @@ import static org.monadium.core.data.Unit.*;
 import org.monadium.core.data.Bottom;
 import static org.monadium.core.data.Bottom.*;
 
-public final class Cont<R, A> {
-	final Function<Function<A, R>, R> ka;
-
-	Cont(Function<Function<A, R>, R> ka) { this.ka = ka; }
-
+public record Cont<R, A>(Function<Function<A, R>, R> ka) {
 	public static <R, A> Cont<R, A> cont(A a) { return cont(ca -> ca.apply(a)); }
 	public static <R, A> Cont<R, A> cont(Function<Function<A, R>, R> ka) { return new Cont<>(ka); }
 
@@ -23,21 +19,19 @@ public final class Cont<R, A> {
 	public static <R, A> Cont<R, A> reset(Cont<A, A> cont) { return cont(evalCont(cont)); }
 	public static <R, A> Cont<R, A> shift(Function<Function<A, Cont<R, Bottom>>, Cont<R, A>> f) { return callCC(f); }
 
-	public static <R, A> Function<Function<A, R>, R> runCont(Cont<R, A> cont) { return cont.ka; }
-	public static <A> A evalCont(Cont<A, A> cont) { return cont.ka.apply(a -> a); }
+	public static <R, A> Function<Function<A, R>, R> runCont(Cont<R, A> cont) { return cont.ka(); }
+	public static <A> A evalCont(Cont<A, A> cont) { return cont.ka().apply(a -> a); }
 
-	public <B> Cont<R, B> map(Function<A, B> f) { return cont(cb -> ka.apply(a -> cb.apply(f.apply(a)))); }
-	public <B> Cont<R, B> applyMap(Cont<R, Function<A, B>> fab) { return cont(cb -> runCont(fab).apply(f -> ka.apply(a -> cb.apply(f.apply(a))))); }
-	public <B> Cont<R, B> flatMap(Function<A, Cont<R, B>> f) { return cont(cb -> ka.apply(a -> runCont(f.apply(a)).apply(cb))); }
+	public <B> Cont<R, B> map(Function<A, B> f) { return cont(cb -> ka().apply(a -> cb.apply(f.apply(a)))); }
+	public <B> Cont<R, B> applyMap(Cont<R, Function<A, B>> fab) { return cont(cb -> runCont(fab).apply(f -> ka().apply(a -> cb.apply(f.apply(a))))); }
+	public <B> Cont<R, B> flatMap(Function<A, Cont<R, B>> f) { return cont(cb -> ka().apply(a -> runCont(f.apply(a)).apply(cb))); }
 
 	public static <R, A> Cont<R, A> pure(A a) { return cont(a); }
 	public static <R, A, B> Cont<R, B> replace(Cont<R, A> fa, B b) { return fa.map(a -> b); }
 	public static <R, A> Cont<R, Unit> discard(Cont<R, A> fa) { return fa.map(a -> unit()); }
 
-	public static final class Notation {
-		Notation() {}
-
-		public static <R, A, B> Cont<R, B> $(Cont<R, A> fa, Function<A, Cont<R, B>> f) { return fa.flatMap(f); }
-		public static <R, A, B> Cont<R, B> $(Cont<R, A> fa, Supplier<Cont<R, B>> fb) { return fa.flatMap(a -> fb.get()); }
+	public interface Notation {
+		static <R, A, B> Cont<R, B> $(Cont<R, A> fa, Function<A, Cont<R, B>> f) { return fa.flatMap(f); }
+		static <R, A, B> Cont<R, B> $(Cont<R, A> fa, Supplier<Cont<R, B>> fb) { return fa.flatMap(a -> fb.get()); }
 	}
 }

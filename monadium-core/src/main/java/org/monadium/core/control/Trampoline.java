@@ -11,146 +11,91 @@ import static org.monadium.core.data.Either.*;
 import org.monadium.core.data.Maybe;
 import static org.monadium.core.data.Maybe.*;
 
-public abstract class Trampoline<A> {
-	static final class Done<A> extends Trampoline<A> {
-		final A a;
+public sealed interface Trampoline<A> {
+	record Done<A>(A a) implements Trampoline<A> {}
+	record More<A>(Function<Unit, Trampoline<A>> ka) implements Trampoline<A> {}
+	record FlatMap<X, A>(Trampoline<X> tx, Function<X, Trampoline<A>> ka) implements Trampoline<A> {}
 
-		Done(A a) { this.a = a; }
+	static <A> Trampoline<A> done(A a) { return new Done<>(a); }
+	static <A> Trampoline<A> more(Function<Unit, Trampoline<A>> ka) { return new More<>(ka); }
+	static <A> Trampoline<A> more(Supplier<Trampoline<A>> ka) { return more(u -> ka.get()); }
 
-		interface Case<A, R> { R caseDone(A a); }
-		@Override final <R> R caseof(Done.Case<A, R> caseDone, More.Case<A, R> caseMore, FlatMap.Case<A, R> caseFlatMap) { return caseDone.caseDone(a); }
+	default <B> Trampoline<B> map(Function<A, B> f) {
+		return switch (this) {
+			case Done<A> p0 -> new FlatMap<>(p0, f.andThen(Done::new));
+			case More<A> p0 -> new FlatMap<>(p0, f.andThen(Done::new));
+			case FlatMap<?, A> p0 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, A> p0) {
+					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).map(f));
+				}
+			}.unpack(p0);
+		};
 	}
-	static final class More<A> extends Trampoline<A> {
-		final Function<Unit, Trampoline<A>> ka;
-
-		More(Function<Unit, Trampoline<A>> ka) { this.ka = ka; }
-
-		interface Case<A, R> { R caseMore(Function<Unit, Trampoline<A>> ka); }
-		@Override final <R> R caseof(Done.Case<A, R> caseDone, More.Case<A, R> caseMore, FlatMap.Case<A, R> caseFlatMap) { return caseMore.caseMore(ka); }
+	default <B> Trampoline<B> applyMap(Trampoline<Function<A, B>> tf) {
+		return switch (tf) {
+			case Done<Function<A, B>> p0 -> new FlatMap<>(p0, this::map);
+			case More<Function<A, B>> p0 -> new FlatMap<>(p0, this::map);
+			case FlatMap<?, Function<A, B>> p0 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, Function<A, B>> p0) {
+					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).flatMap(a -> map(a)));
+				}
+			}.unpack(p0);
+		};
 	}
-	static final class FlatMap<X, A> extends Trampoline<A> {
-		final Trampoline<X> tx;
-		final Function<X, Trampoline<A>> ka;
-
-		FlatMap(Trampoline<X> tx, Function<X, Trampoline<A>> ka) { this.tx = tx; this.ka = ka; }
-
-		interface Case<A, R> { <X> R caseFlatMap(Trampoline<X> tx, Function<X, Trampoline<A>> ka); }
-		@Override final <R> R caseof(Done.Case<A, R> caseDone, More.Case<A, R> caseMore, FlatMap.Case<A, R> caseFlatMap) { return caseFlatMap.caseFlatMap(tx, ka); }
-	}
-
-	Trampoline() {}
-
-	interface Match<A, R> extends Done.Case<A, R>, More.Case<A, R>, FlatMap.Case<A, R> {}
-	final <R> R match(Match<A, R> match) { return caseof(match, match, match); }
-	abstract <R> R caseof(Done.Case<A, R> caseDone, More.Case<A, R> caseMore, FlatMap.Case<A, R> caseFlatMap);
-
-	public static <A> Trampoline<A> done(A a) { return new Done<>(a); }
-	public static <A> Trampoline<A> more(Function<Unit, Trampoline<A>> ka) { return new More<>(ka); }
-	public static <A> Trampoline<A> more(Supplier<Trampoline<A>> ka) { return more(u -> ka.get()); }
-
-	public final <B> Trampoline<B> map(Function<A, B> f) {
-		return this.match(new Match<A, Trampoline<B>>() {
-			@Override public final Trampoline<B>
-				caseDone(A a) {
-				return new FlatMap<>(Trampoline.this, f.andThen(Done::new));
-			}
-			@Override public final Trampoline<B>
-				caseMore(Function<Unit, Trampoline<A>> ka) {
-				return new FlatMap<>(Trampoline.this, f.andThen(Done::new));
-			}
-			@Override public final <X> Trampoline<B>
-				caseFlatMap(Trampoline<X> tx, Function<X, Trampoline<A>> ka) {
-				return new FlatMap<>(tx, x -> ka.apply(x).map(f));
-			}
-		});
-	}
-	public final <B> Trampoline<B> applyMap(Trampoline<Function<A, B>> fab) {
-		return fab.match(new Match<Function<A, B>, Trampoline<B>>() {
-			@Override public final Trampoline<B>
-				caseDone(Function<A, B> f) {
-				return new FlatMap<>(fab, Trampoline.this::map);
-			}
-			@Override public final Trampoline<B>
-				caseMore(Function<Unit, Trampoline<Function<A, B>>> kf) {
-				return new FlatMap<>(fab, Trampoline.this::map);
-			}
-			@Override public final <X> Trampoline<B>
-				caseFlatMap(Trampoline<X> tx, Function<X, Trampoline<Function<A, B>>> kf) {
-				return new FlatMap<>(tx, x -> kf.apply(x).flatMap(Trampoline.this::map));
-			}
-		});
-	}
-	public final <B> Trampoline<B> flatMap(Function<A, Trampoline<B>> f) {
-		return this.match(new Match<A, Trampoline<B>>() {
-			@Override public final Trampoline<B>
-				caseDone(A a) {
-				return new FlatMap<>(Trampoline.this, f);
-			}
-			@Override public final Trampoline<B>
-				caseMore(Function<Unit, Trampoline<A>> ka) {
-				return new FlatMap<>(Trampoline.this, f);
-			}
-			@Override public final <X> Trampoline<B>
-				caseFlatMap(Trampoline<X> tx, Function<X, Trampoline<A>> ka) {
-				return new FlatMap<>(tx, x -> ka.apply(x).flatMap(f));
-			}
-		});
+	default <B> Trampoline<B> flatMap(Function<A, Trampoline<B>> f) {
+		return switch (this) {
+			case Done<A> p0 -> new FlatMap<>(p0, f);
+			case More<A> p0 -> new FlatMap<>(p0, f);
+			case FlatMap<?, A> p0 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, A> p0) {
+					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).flatMap(f));
+				}
+			}.unpack(p0);
+		};
 	}
 
-	public static <A> Trampoline<A> pure(A a) { return done(a); }
-	public static <A, B> Trampoline<B> replace(Trampoline<A> fa, B b) { return fa.map(a -> b); }
-	public static <A> Trampoline<Unit> discard(Trampoline<A> fa) { return fa.map(a -> unit()); }
+	static <A> Trampoline<A> pure(A a) { return done(a); }
+	static <A, B> Trampoline<B> replace(Trampoline<A> fa, B b) { return fa.map(a -> b); }
+	static <A> Trampoline<Unit> discard(Trampoline<A> fa) { return fa.map(a -> unit()); }
 
-	final <T extends Throwable> Either<Function<Unit, Trampoline<A>>, A> resume(Maybe<Thrower<T>> interrupter) throws T {
+	default <T extends Throwable> Either<Function<Unit, Trampoline<A>>, A> resume(Maybe<Thrower<T>> interrupter) throws T {
 		Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> tco = left(this);
 		while (tco.isLeft()) tco = interrupter.isJust() && Thread.interrupted()
 			? interrupter.coerceJust().apply()
-			: tco.coerceLeft().match(new Match<A, Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>>() {
-				@Override public final Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-					caseDone(A a) {
-					return right(right(a));
-				}
-				@Override public final Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-					caseMore(Function<Unit, Trampoline<A>> ka) {
-					return right(left(ka));
-				}
-				@Override public final <X> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-					caseFlatMap(Trampoline<X> tx, Function<X, Trampoline<A>> ka) {
-					return tx.match(new Match<X, Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>>() {
-						@Override public final Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-							caseDone(X x) {
-							return left(ka.apply(x));
-						}
-						@Override public final Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-							caseMore(Function<Unit, Trampoline<X>> kx) {
-							return right(left(u -> kx.apply(unit()).flatMap(ka)));
-						}
-						@Override public final <Y> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>>
-							caseFlatMap(Trampoline<Y> ty, Function<Y, Trampoline<X>> kx) {
-							return left(ty.flatMap(y -> kx.apply(y).flatMap(ka)));
-						}
-					});
-				}
-			});
+			: switch (tco.coerceLeft()) {
+				case Done<A> p0 -> right(right(p0.a()));
+				case More<A> p0 -> right(left(p0.ka()));
+				case FlatMap<?, A> p0 -> new Object() {
+					<X> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<X, A> p0) {
+						return switch (p0.tx()) {
+							case Done<X> p1 -> left(p0.ka().apply(p1.a()));
+							case More<X> p1 -> right(left(u -> p1.ka().apply(unit()).flatMap(p0.ka())));
+							case FlatMap<?, X> p1 -> new Object() {
+								<Y> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<Y, X> p1) {
+									return left(p1.tx().flatMap(y -> p1.ka().apply(y).flatMap(p0.ka())));
+								}
+							}.unpack(p1);
+						};
+					}
+				}.unpack(p0);
+			};
 		return tco.coerceRight();
 	}
-	final <T extends Throwable> A run(Maybe<Thrower<T>> interrupter) throws T {
+	default <T extends Throwable> A run(Maybe<Thrower<T>> interrupter) throws T {
 		Either<Trampoline<A>, A> tco = left(this);
 		while (tco.isLeft()) tco = interrupter.isJust() && Thread.interrupted()
 			? interrupter.coerceJust().apply()
-			: tco.coerceLeft().resume(interrupter).caseof(
-				ka -> left(ka.apply(unit())),
-				a -> right(a)
-			);
+			: switch (tco.coerceLeft().resume(interrupter)) {
+				case Left<Function<Unit, Trampoline<A>>, A> p0 -> left(p0.a().apply(unit()));
+				case Right<Function<Unit, Trampoline<A>>, A> p0 -> right(p0.b());
+			};
 		return tco.coerceRight();
 	}
-	public final A run() { return run(nothing()); }
-	public final A interruptibleRun() throws InterruptedException { return run(just(Thrower.of(InterruptedException::new))); }
+	default A run() { return run(nothing()); }
+	default A interruptibleRun() throws InterruptedException { return run(just(Thrower.of(InterruptedException::new))); }
 
-	public static final class Notation {
-		Notation() {}
-
-		public static <A, B> Trampoline<B> $(Trampoline<A> fa, Function<A, Trampoline<B>> f) { return fa.flatMap(f); }
-		public static <A, B> Trampoline<B> $(Trampoline<A> fa, Supplier<Trampoline<B>> fb) { return fa.flatMap(a -> fb.get()); }
+	interface Notation {
+		static <A, B> Trampoline<B> $(Trampoline<A> fa, Function<A, Trampoline<B>> f) { return fa.flatMap(f); }
+		static <A, B> Trampoline<B> $(Trampoline<A> fa, Supplier<Trampoline<B>> fb) { return fa.flatMap(a -> fb.get()); }
 	}
 }
