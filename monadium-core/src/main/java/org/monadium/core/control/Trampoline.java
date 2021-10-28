@@ -22,35 +22,35 @@ public sealed interface Trampoline<A> {
 
 	default <B> Trampoline<B> map(Function<A, B> f) {
 		return switch (this) {
-			case Done<A> p0 -> new FlatMap<>(p0, f.andThen(Done::new));
-			case More<A> p0 -> new FlatMap<>(p0, f.andThen(Done::new));
-			case FlatMap<?, A> p0 -> new Object() {
-				<X> Trampoline<B> unpack(FlatMap<X, A> p0) {
-					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).map(f));
+			case Done<A> p1 -> new FlatMap<>(p1, f.andThen(Done::new));
+			case More<A> p1 -> new FlatMap<>(p1, f.andThen(Done::new));
+			case FlatMap<?, A> p1 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, A> p1) {
+					return new FlatMap<>(p1.tx(), x -> p1.ka().apply(x).map(f));
 				}
-			}.unpack(p0);
+			}.unpack(p1);
 		};
 	}
 	default <B> Trampoline<B> applyMap(Trampoline<Function<A, B>> tf) {
 		return switch (tf) {
-			case Done<Function<A, B>> p0 -> new FlatMap<>(p0, this::map);
-			case More<Function<A, B>> p0 -> new FlatMap<>(p0, this::map);
-			case FlatMap<?, Function<A, B>> p0 -> new Object() {
-				<X> Trampoline<B> unpack(FlatMap<X, Function<A, B>> p0) {
-					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).flatMap(a -> map(a)));
+			case Done<Function<A, B>> p1 -> new FlatMap<>(p1, this::map);
+			case More<Function<A, B>> p1 -> new FlatMap<>(p1, this::map);
+			case FlatMap<?, Function<A, B>> p1 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, Function<A, B>> p1) {
+					return new FlatMap<>(p1.tx(), x -> p1.ka().apply(x).flatMap(a -> map(a)));
 				}
-			}.unpack(p0);
+			}.unpack(p1);
 		};
 	}
 	default <B> Trampoline<B> flatMap(Function<A, Trampoline<B>> f) {
 		return switch (this) {
-			case Done<A> p0 -> new FlatMap<>(p0, f);
-			case More<A> p0 -> new FlatMap<>(p0, f);
-			case FlatMap<?, A> p0 -> new Object() {
-				<X> Trampoline<B> unpack(FlatMap<X, A> p0) {
-					return new FlatMap<>(p0.tx(), x -> p0.ka().apply(x).flatMap(f));
+			case Done<A> p1 -> new FlatMap<>(p1, f);
+			case More<A> p1 -> new FlatMap<>(p1, f);
+			case FlatMap<?, A> p1 -> new Object() {
+				<X> Trampoline<B> unpack(FlatMap<X, A> p1) {
+					return new FlatMap<>(p1.tx(), x -> p1.ka().apply(x).flatMap(f));
 				}
-			}.unpack(p0);
+			}.unpack(p1);
 		};
 	}
 
@@ -63,21 +63,21 @@ public sealed interface Trampoline<A> {
 		while (tco.isLeft()) tco = interrupter.isJust() && Thread.interrupted()
 			? interrupter.coerceJust().apply()
 			: switch (tco.coerceLeft()) {
-				case Done<A> p0 -> right(right(p0.a()));
-				case More<A> p0 -> right(left(p0.ka()));
-				case FlatMap<?, A> p0 -> new Object() {
-					<X> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<X, A> p0) {
-						return switch (p0.tx()) {
-							case Done<X> p1 -> left(p0.ka().apply(p1.a()));
-							case More<X> p1 -> right(left(u -> p1.ka().apply(unit()).flatMap(p0.ka())));
-							case FlatMap<?, X> p1 -> new Object() {
-								<Y> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<Y, X> p1) {
-									return left(p1.tx().flatMap(y -> p1.ka().apply(y).flatMap(p0.ka())));
+				case Done<A> p1 -> right(right(p1.a()));
+				case More<A> p1 -> right(left(p1.ka()));
+				case FlatMap<?, A> p1 -> new Object() {
+					<X> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<X, A> p1) {
+						return switch (p1.tx()) {
+							case Done<X> p2 -> left(p1.ka().apply(p2.a()));
+							case More<X> p2 -> right(left(u -> p2.ka().apply(unit()).flatMap(p1.ka())));
+							case FlatMap<?, X> p2 -> new Object() {
+								<Y> Either<Trampoline<A>, Either<Function<Unit, Trampoline<A>>, A>> unpack(FlatMap<Y, X> p2) {
+									return left(p2.tx().flatMap(y -> p2.ka().apply(y).flatMap(p1.ka())));
 								}
-							}.unpack(p1);
+							}.unpack(p2);
 						};
 					}
-				}.unpack(p0);
+				}.unpack(p1);
 			};
 		return tco.coerceRight();
 	}
@@ -86,8 +86,8 @@ public sealed interface Trampoline<A> {
 		while (tco.isLeft()) tco = interrupter.isJust() && Thread.interrupted()
 			? interrupter.coerceJust().apply()
 			: switch (tco.coerceLeft().resume(interrupter)) {
-				case Left<Function<Unit, Trampoline<A>>, A> p0 -> left(p0.a().apply(unit()));
-				case Right<Function<Unit, Trampoline<A>>, A> p0 -> right(p0.b());
+				case Left<Function<Unit, Trampoline<A>>, A> p1 -> left(p1.a().apply(unit()));
+				case Right<Function<Unit, Trampoline<A>>, A> p1 -> right(p1.b());
 			};
 		return tco.coerceRight();
 	}
